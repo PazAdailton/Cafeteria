@@ -37,24 +37,4 @@ public class ProdutoDAO {
 	   	}	
 	   	return produtos;
 		}
-	   
-	   public Produto buscarProdPorId(Integer id) {
-		   
-		String sql = "select * from produto where id = ?";
-		try {
-	    PreparedStatement preparador = con.prepareStatement(sql);
-	    preparador.setInt(1, id);
-	    ResultSet resultado = preparador.executeQuery();
-	    while(resultado.next()) {
-	    Produto p = new Produto();
-	    p.setId(resultado.getLong("id"));
-	    p.setNome(resultado.getString("nome"));
-	    
-	    return p;
-	    }
-		} catch (Exception e) {
-			// TODO: handle exception
-		}
-		return null;
-	   	}
 }
