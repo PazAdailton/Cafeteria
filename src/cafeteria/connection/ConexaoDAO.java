@@ -8,11 +8,11 @@ import javax.swing.JOptionPane;
 
 public class ConexaoDAO {
 	
-	 public static String driver = "";
-	 final static String dbName = "";
-	 final static String url = "";
-	 final static String login = "";
-	 final static String senha = "";
+	 public static String driver = "com.mysql.cj.jdbc.Driver";
+	 final static String dbName = "av2";
+	 final static String url = "jdbc:mysql://localhost:3306/" + dbName + "?useTimezone=true&serverTimezone=UTC";
+	 final static String login = "root";
+	 final static String senha = "admin";
 	
 	
 	public static Connection getConnection() {

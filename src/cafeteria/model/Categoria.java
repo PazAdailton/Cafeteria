@@ -1,8 +1,9 @@
 package cafeteria.model;
 
 public enum Categoria {
-	
-	COMIDAS,
-	BEBIDAS,
-	OUTROS
+    CAFE,
+    CHA,
+    SALGADO,
+    DOCE,
+    OUTROS;
 }

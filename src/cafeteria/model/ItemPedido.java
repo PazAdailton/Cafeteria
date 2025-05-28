@@ -3,45 +3,81 @@ package cafeteria.model;
 import java.math.BigDecimal;
 
 public class ItemPedido {
-	
-	private long id;
-	private Produto produto;
-	private int quantidade;
-	private BigDecimal precoUnitario;
-	
-	public ItemPedido() {}
+    private Long id;               // ID do item_pedido (pode ser null para novos itens)
+    private Pedido pedido;         // Referência ao pedido (opcional, dependendo da necessidade)
+    private Produto produto;       // Produto associado
+    private Integer quantidade;    // Usando Integer para permitir null
+    private BigDecimal precoUnitario; // Preço no momento da venda
+    private Boolean cancelado;     // Status do item (opcional)
 
-	public long getId() {
-		return id;
-	}
+    public ItemPedido() {
+        this.quantidade = 1;       // Valor padrão
+        this.cancelado = false;
+    }
 
-	public void setId(long id) {
-		this.id = id;
-	}
+    // Getters e Setters
+    public Long getId() {
+        return id;
+    }
 
-	public Produto getProduto() {
-		return produto;
-	}
+    public void setId(Long id) {
+        this.id = id;
+    }
 
-	public void setProduto(Produto produto) {
-		this.produto = produto;
-	}
+    public Pedido getPedido() {
+        return pedido;
+    }
 
-	public int getQuantidade() {
-		return quantidade;
-	}
+    public void setPedido(Pedido pedido) {
+        this.pedido = pedido;
+    }
 
-	public void setQuantidade(int quantidade) {
-		this.quantidade = quantidade;
-	}
+    public Produto getProduto() {
+        return produto;
+    }
 
-	public BigDecimal getPrecoUnitario() {
-		return precoUnitario;
-	}
+    public void setProduto(Produto produto) {
+        this.produto = produto;
+    }
 
-	public void setPrecoUnitario(BigDecimal precoUnitario) {
-		this.precoUnitario = precoUnitario;
-	}
-	
-	
+    public Integer getQuantidade() {
+        return quantidade;
+    }
+
+    public void setQuantidade(Integer quantidade) {
+        if (quantidade != null && quantidade > 0) {
+            this.quantidade = quantidade;
+        }
+    }
+
+    public BigDecimal getPrecoUnitario() {
+        return precoUnitario;
+    }
+
+    public void setPrecoUnitario(BigDecimal precoUnitario) {
+        if (precoUnitario != null && precoUnitario.compareTo(BigDecimal.ZERO) >= 0) {
+            this.precoUnitario = precoUnitario;
+        }
+    }
+
+    public Boolean isCancelado() {
+        return cancelado;
+    }
+
+    public void setCancelado(Boolean cancelado) {
+        this.cancelado = cancelado;
+    }
+
+    // Método utilitário para calcular o total do item
+    public BigDecimal getTotalItem() {
+        if (precoUnitario == null || quantidade == null) {
+            return BigDecimal.ZERO;
+        }
+        return precoUnitario.multiply(new BigDecimal(quantidade));
+    }
+
+    @Override
+    public String toString() {
+        return produto.getNome() + " x" + quantidade + " (R$ " + precoUnitario + ")";
+    }
 }

@@ -9,23 +9,29 @@ public class ClienteDAO {
 
 	private Connection con = ConexaoDAO.getConnection();
 
-	public Cliente buscarPorNome(String nome) {
-		String sql = "SELECT * FROM cliente WHERE nome = ?";
-		try (PreparedStatement preparador = con.prepareStatement(sql)) {
-		preparador.setString(1, nome);
-		ResultSet rs = preparador.executeQuery();
 
-		if (rs.next()) {
-		Cliente cliente = new Cliente();
-		cliente.setId(rs.getLong("id"));
-		cliente.setNome(rs.getString("nome"));
-		return cliente;
-		}
-		}catch (SQLException e) {
-			e.printStackTrace();
-		}
-		return null;
+	public List<Cliente> buscarPorNome(String nome) {
+	    String sql = "SELECT id, nome FROM cliente WHERE LOWER(nome) LIKE LOWER(?) ORDER BY nome";
+	    List<Cliente> clientes = new ArrayList<>();
+	    
+	    try (PreparedStatement stmt = con.prepareStatement(sql)) {
+	        stmt.setString(1, "%" + nome + "%"); // Busca parcial
+	        
+	        try (ResultSet rs = stmt.executeQuery()) {
+	            while (rs.next()) {
+	                Cliente cliente = new Cliente();
+	                cliente.setId(rs.getLong("id"));
+	                cliente.setNome(rs.getString("nome"));
+	                clientes.add(cliente);
+	            }
+	        }
+	    } catch (SQLException e) {
+	        System.err.println("Erro ao buscar cliente por nome: " + e.getMessage());
+	        e.printStackTrace();
+	    }
+	    return clientes;
 	}
+	
 
 	public void salvar(Cliente cliente) {
 		String sql = "INSERT INTO cliente (nome) VALUES (?)";
