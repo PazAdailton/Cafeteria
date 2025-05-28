@@ -1,60 +1,312 @@
 package cafeteria.connection;
 
-import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-//certo
-import java.sql.Timestamp;
-
-import cafeteria.model.ItemPedido;
-import cafeteria.model.Pedido;
+import java.math.BigDecimal;
+import java.sql.*;
+import java.util.*;
+import cafeteria.model.*;
 
 public class PedidoDAO {
-		
-	
+    private Connection con = ConexaoDAO.getConnection();
 
-   private Connection con = ConexaoDAO.getConnection();
-   
- 
-   public void cadastrarPedidoEItens(Pedido pedido) {
-   String sqlItemPedido = "insert into item_pedido (pedido_id, produto_id, quantidade, precoUnitario) values (?,?,?,?)";
-   String sqlPedido = "insert into pedido (dataHoraPedido, cliente_id) values (?,?)";
-   		
-	try {
-		PreparedStatement preparadorPedido = con.prepareStatement(sqlPedido,PreparedStatement.RETURN_GENERATED_KEYS);
-		PreparedStatement preparadorItemPedido = con.prepareStatement(sqlItemPedido);
-		
-		Timestamp timesTamp = new Timestamp(pedido.getDataHoraPedido().getTimeInMillis());
-		preparadorPedido.setTimestamp(1, timesTamp);
-		
-		if(pedido.getCliente() != null) {
-			preparadorPedido.setLong(2, pedido.getCliente().getId());
-		}else {
-            preparadorPedido.setNull(2, java.sql.Types.BIGINT);
+    // --- Métodos de Consulta ---
+    public List<Pedido> listarTodosPedidos() {
+        String sql = "SELECT p.codigo, p.dataHoraPedido, p.cliente_id, " +
+                    "c.nome as cliente_nome, p.cancelado, p.entregue " +
+                    "FROM pedido p LEFT JOIN cliente c ON p.cliente_id = c.id " +
+                    "ORDER BY p.dataHoraPedido DESC";
+        
+        List<Pedido> pedidos = new ArrayList<>();
+        
+        try (PreparedStatement stmt = con.prepareStatement(sql);
+             ResultSet rs = stmt.executeQuery()) {
+            
+            while (rs.next()) {
+                Pedido pedido = new Pedido();
+                pedido.setId(rs.getLong("codigo"));
+                
+                Calendar data = Calendar.getInstance();
+                data.setTime(rs.getTimestamp("dataHoraPedido"));
+                pedido.setDataHoraPedido(data);
+                
+                if (rs.getObject("cliente_id") != null) {
+                    Cliente cliente = new Cliente();
+                    cliente.setId(rs.getLong("cliente_id"));
+                    cliente.setNome(rs.getString("cliente_nome"));
+                    pedido.setCliente(cliente);
+                }
+                
+                pedido.setCancelado(rs.getBoolean("cancelado"));
+                pedido.setEntregue(rs.getBoolean("entregue"));
+                pedido.setItens(listarItensPedido(pedido.getId()));
+                
+                pedidos.add(pedido);
+            }
+        } catch (SQLException e) {
+            System.err.println("Erro ao listar pedidos: " + e.getMessage());
         }
-		preparadorPedido.executeUpdate();
-		ResultSet result = preparadorPedido.getGeneratedKeys();
-		if(result.next()) {
-			long idPedido = result.getLong(1);
-			pedido.setId(idPedido);
-			for(ItemPedido item: pedido.getItens()) {
-				preparadorItemPedido.setLong(1, idPedido);
-				preparadorItemPedido.setLong(2, item.getProduto().getId());
-				preparadorItemPedido.setInt(3, item.getQuantidade());
-				preparadorItemPedido.setBigDecimal(4, item.getPrecoUnitario());
-				
-				preparadorItemPedido.executeUpdate();
-			}
-            System.out.println("Pedido e itens inseridos com sucesso!");
-		}
-	
-	} catch (Exception e) {
-		e.printStackTrace();
-        System.out.println("Erro ao cadastrar pedido com itens: " + e.getMessage());
-	}
-	    
-	}
-	
-	        
- }
-	
+        return pedidos;
+    }
+
+    private List<ItemPedido> listarItensPedid1o(long pedidoId) {
+        String sql = "SELECT ip.id, ip.produto_id, ip.quantidade, ip.precoUnitario, " +
+                    "pr.nome as produto_nome, pr.preco as produto_preco, " +
+                    "pr.categoria, pr.quantidade as produto_estoque " +
+                    "FROM item_pedido ip JOIN produto pr ON ip.produto_id = pr.id " +
+                    "WHERE ip.pedido_id = ?";
+        
+        List<ItemPedido> itens = new ArrayList<>();
+        
+        try (PreparedStatement stmt = con.prepareStatement(sql)) {
+            stmt.setLong(1, pedidoId);
+            
+            try (ResultSet rs = stmt.executeQuery()) {
+                while (rs.next()) {
+                    ItemPedido item = new ItemPedido();
+                    item.setId(rs.getLong("id"));
+                    item.setQuantidade(rs.getInt("quantidade"));
+                    item.setPrecoUnitario(rs.getBigDecimal("precoUnitario"));
+                    
+                    Produto produto = new Produto();
+                    produto.setId(rs.getLong("produto_id"));
+                    produto.setNome(rs.getString("produto_nome"));
+                    produto.setPreco(rs.getBigDecimal("produto_preco"));
+                    produto.setCategoria(Categoria.valueOf(rs.getString("categoria")));
+                    produto.setQuantidadeProduto(rs.getInt("produto_estoque"));
+                    
+                    item.setProduto(produto);
+                    itens.add(item);
+                }
+            }
+        } catch (SQLException e) {
+            System.err.println("Erro ao listar itens do pedido: " + e.getMessage());
+        }
+        return itens;
+    }
+
+    public void cadastrarPedidoEItens(Pedido pedido) {
+        String sqlPedido = "INSERT INTO pedido (dataHoraPedido, cliente_id, cancelado, entregue) VALUES (?, ?, ?, ?)";
+        String sqlItem = "INSERT INTO item_pedido (pedido_id, produto_id, quantidade, precoUnitario) VALUES (?, ?, ?, ?)";
+        
+        try {
+            con.setAutoCommit(false);
+            
+            // Cadastra pedido principal
+            try (PreparedStatement stmtPedido = con.prepareStatement(sqlPedido, Statement.RETURN_GENERATED_KEYS)) {
+                stmtPedido.setTimestamp(1, new Timestamp(pedido.getDataHoraPedido().getTimeInMillis()));
+                
+                if (pedido.getCliente() != null) {
+                    stmtPedido.setLong(2, pedido.getCliente().getId());
+                } else {
+                    stmtPedido.setNull(2, Types.BIGINT);
+                }
+                
+                stmtPedido.setBoolean(3, pedido.isCancelado());
+                stmtPedido.setBoolean(4, pedido.isEntregue());
+                stmtPedido.executeUpdate();
+                
+                try (ResultSet rs = stmtPedido.getGeneratedKeys()) {
+                    if (rs.next()) {
+                        pedido.setId(rs.getLong(1));
+                    }
+                }
+            }
+            
+            // Cadastra itens
+            try (PreparedStatement stmtItem = con.prepareStatement(sqlItem)) {
+                for (ItemPedido item : pedido.getItens()) {
+                    stmtItem.setLong(1, pedido.getId());
+                    stmtItem.setLong(2, item.getProduto().getId());
+                    stmtItem.setInt(3, item.getQuantidade());
+                    stmtItem.setBigDecimal(4, item.getPrecoUnitario());
+                    stmtItem.addBatch();
+                }
+                stmtItem.executeBatch();
+            }
+            
+            con.commit();
+        } catch (SQLException e) {
+            try { con.rollback(); } catch (SQLException ex) {}
+            throw new RuntimeException("Erro ao cadastrar pedido", e);
+        } finally {
+            try { con.setAutoCommit(true); } catch (SQLException e) {}
+        }
+    }
+
+    // Método auxiliar para atualizar estoque
+    private void atualizarEstoquePedido(Pedido pedido) throws SQLException {
+        String sql = "UPDATE produto SET quantidade = quantidade - ? WHERE id = ?";
+        
+        try (PreparedStatement stmt = con.prepareStatement(sql)) {
+            for (ItemPedido item : pedido.getItens()) {
+                stmt.setInt(1, item.getQuantidade());
+                stmt.setLong(2, item.getProduto().getId());
+                stmt.addBatch();
+            }
+            stmt.executeBatch();
+        }
+    }
+    
+    public Pedido buscarPedidoPorId(long idPedido) {
+        String sqlPedido = "SELECT p.codigo, p.dataHoraPedido, p.cliente_id, " +
+                          "c.nome as cliente_nome, p.cancelado, p.entregue " +
+                          "FROM pedido p LEFT JOIN cliente c ON p.cliente_id = c.id " +
+                          "WHERE p.codigo = ?";
+        String sqlItens = "SELECT ip.id, ip.produto_id, ip.quantidade, ip.precoUnitario, " +
+                         "p.nome as produto_nome FROM item_pedido ip " +
+                         "JOIN produto p ON ip.produto_id = p.id WHERE ip.pedido_id = ?";
+        
+        Pedido pedido = null;
+        
+        try {
+            // Busca os dados básicos do pedido
+            try (PreparedStatement stmtPedido = con.prepareStatement(sqlPedido)) {
+                stmtPedido.setLong(1, idPedido);
+                
+                try (ResultSet rsPedido = stmtPedido.executeQuery()) {
+                    if (rsPedido.next()) {
+                        pedido = new Pedido();
+                        pedido.setId(rsPedido.getLong("codigo"));
+                        
+                        Calendar data = Calendar.getInstance();
+                        data.setTime(rsPedido.getTimestamp("dataHoraPedido"));
+                        pedido.setDataHoraPedido(data);
+                        
+                        pedido.setCancelado(rsPedido.getBoolean("cancelado"));
+                        pedido.setEntregue(rsPedido.getBoolean("entregue"));
+                        
+                        if (rsPedido.getObject("cliente_id") != null) {
+                            Cliente cliente = new Cliente();
+                            cliente.setId(rsPedido.getLong("cliente_id"));
+                            pedido.setCliente(cliente);
+                        }
+                    }
+                }
+            }
+            
+            // Busca os itens do pedido
+            if (pedido != null) {
+                try (PreparedStatement stmtItens = con.prepareStatement(sqlItens)) {
+                    stmtItens.setLong(1, idPedido);
+                    
+                    try (ResultSet rsItens = stmtItens.executeQuery()) {
+                        List<ItemPedido> itens = new ArrayList<>();
+                        
+                        while (rsItens.next()) {
+                            ItemPedido item = new ItemPedido();
+                            item.setId(rsItens.getLong("id"));
+                            item.setQuantidade(rsItens.getInt("quantidade"));
+                            item.setPrecoUnitario(rsItens.getBigDecimal("precoUnitario"));
+                            
+                            Produto produto = new Produto();
+                            produto.setId(rsItens.getLong("produto_id"));
+                            produto.setNome(rsItens.getString("produto_nome"));
+                            item.setProduto(produto);
+                            
+                            itens.add(item);
+                        }
+                        pedido.setItens(itens);
+                    }
+                }
+            }
+        } catch (SQLException e) {
+            System.err.println("Erro ao buscar pedido por ID: " + e.getMessage());
+            e.printStackTrace();
+        }
+        return pedido;
+    }
+
+    // --- Métodos de Atualização ---
+    public boolean marcarComoEntregue(long idPedido) {
+        String sql = "UPDATE pedido SET entregue = true, cancelado = false WHERE codigo = ? AND entregue = false";
+        
+        try (PreparedStatement stmt = con.prepareStatement(sql)) {
+            stmt.setLong(1, idPedido);
+            
+            int rowsAffected = stmt.executeUpdate();
+            if (rowsAffected > 0) {
+                System.out.println("Pedido #" + idPedido + " marcado como entregue com sucesso!");
+                return true;
+            } else {
+                System.out.println("Pedido não encontrado ou já estava entregue/cancelado");
+                return false;
+            }
+        } catch (SQLException e) {
+            System.err.println("Erro ao marcar pedido como entregue: " + e.getMessage());
+            e.printStackTrace();
+            return false;
+        }
+    }
+    
+    public boolean cancelarPedido(long idPedido) {
+        String sql = "UPDATE pedido SET cancelado = true, entregue = false WHERE codigo = ? AND cancelado = false AND entregue = false";
+        
+        try (PreparedStatement stmt = con.prepareStatement(sql)) {
+            stmt.setLong(1, idPedido);
+            
+            int rowsAffected = stmt.executeUpdate();
+            if (rowsAffected > 0) {
+                System.out.println("Pedido #" + idPedido + " cancelado com sucesso!");
+                return true;
+            } else {
+                System.out.println("Pedido não encontrado ou já estava cancelado/entregue");
+                return false;
+            }
+        } catch (SQLException e) {
+            System.err.println("Erro ao cancelar pedido: " + e.getMessage());
+            e.printStackTrace();
+            return false;
+        }
+    }
+
+    // --- Métodos Auxiliares ---
+    private List<ItemPedido> listarItensPedido(long pedidoId) {
+        String sql = "SELECT ip.id as item_id, ip.quantidade, ip.precoUnitario, " +
+                    "p.id as produto_id, p.nome as produto_nome " +
+                    "FROM item_pedido ip " +
+                    "JOIN produto p ON ip.produto_id = p.id " +
+                    "WHERE ip.pedido_id = ?";
+        
+        List<ItemPedido> itens = new ArrayList<>();
+        
+        try (PreparedStatement stmt = con.prepareStatement(sql)) {
+            stmt.setLong(1, pedidoId);
+            
+            try (ResultSet rs = stmt.executeQuery()) {
+                while (rs.next()) {
+                    ItemPedido item = new ItemPedido();
+                    item.setId(rs.getLong("item_id"));
+                    item.setQuantidade(rs.getInt("quantidade"));
+                    item.setPrecoUnitario(rs.getBigDecimal("precoUnitario"));
+                    
+                    Produto produto = new Produto();
+                    produto.setId(rs.getLong("produto_id"));
+                    produto.setNome(rs.getString("produto_nome"));
+                    item.setProduto(produto);
+                    
+                    itens.add(item);
+                }
+            }
+        } catch (SQLException e) {
+            System.err.println("Erro ao listar itens do pedido: " + e.getMessage());
+        }
+        return itens;
+    }
+    
+    public BigDecimal calcularTotalFaturado() {
+        String sql = "SELECT SUM(ip.quantidade * ip.precoUnitario) as total " +
+                     "FROM item_pedido ip JOIN pedido p ON ip.pedido_id = p.codigo " +
+                     "WHERE p.entregue = 1";
+        
+        try (PreparedStatement stmt = con.prepareStatement(sql);
+             ResultSet rs = stmt.executeQuery()) {
+            
+            if (rs.next()) {
+                BigDecimal total = rs.getBigDecimal("total");
+                return total != null ? total : BigDecimal.ZERO;
+            }
+        } catch (SQLException e) {
+            System.err.println("Erro ao calcular total faturado: " + e.getMessage());
+        }
+        return BigDecimal.ZERO;
+    }
+}
