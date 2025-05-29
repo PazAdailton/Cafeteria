@@ -166,7 +166,7 @@ public class CafeteriaInterface extends JPanel {
     private void definirEventos() {
         btAdicionar.addActionListener(e -> adicionarItem());
         btRemover.addActionListener(e -> removerItem());
-        btFinalizarPedido.addActionListener(e -> finalizarPedido1());
+        btFinalizarPedido.addActionListener(e -> finalizarPedido());
     }
     
     private void adicionarItem() {
@@ -246,82 +246,42 @@ public class CafeteriaInterface extends JPanel {
         tfTotal.setText(df.format(total));
     }
     
-   
-
-        private void finalizarPedido1() {
-            try {
-                // Validação de itens
-                if (itensPedido.isEmpty()) {
-                    JOptionPane.showMessageDialog(this, 
-                        "Adicione itens ao pedido antes de finalizar!", 
-                        "Aviso", JOptionPane.WARNING_MESSAGE);
-                    return;
-                }
-
-                // Validação do nome do cliente
-                String nomeCliente = tfCliente.getText().trim();
-                if (nomeCliente.isEmpty()) {
-                    JOptionPane.showMessageDialog(this, 
-                        "Informe o nome do cliente!", 
-                        "Aviso", JOptionPane.WARNING_MESSAGE);
-                    tfCliente.requestFocus();
-                    return;
-                }
-
-                // Busca ou cria o cliente
-                Cliente cliente;
-                List<Cliente> clientesEncontrados = clienteDAO.buscarPorNome(nomeCliente);
-                
-                if (!clientesEncontrados.isEmpty()) {
-                    // Usa o primeiro cliente encontrado (pode implementar seleção se houver muitos)
-                    cliente = clientesEncontrados.get(0);
-                } else {
-                    // Cria novo cliente se não existir
-                    cliente = new Cliente();
-                    cliente.setNome(nomeCliente);
-                    clienteDAO.salvar(cliente);
-                }
-
-                // Cria e cadastra o pedido
-                Pedido pedido = new Pedido();
-                pedido.setCliente(cliente);
-                pedido.setDataHoraPedido(Calendar.getInstance());
-                pedido.setItens(new ArrayList<>(itensPedido)); // Cria cópia da lista
-                
-                // Atualiza estoque antes de cadastrar
-                if (!validarEstoqueDisponivel()) {
-                    JOptionPane.showMessageDialog(this,
-                        "Quantidade indisponível em estoque para algum produto!",
-                        "Erro de Estoque", JOptionPane.ERROR_MESSAGE);
-                    return;
-                }
-
-                pedidoDAO.cadastrarPedidoEItens(pedido);
-                
-                // Exibe mensagem de sucesso
-               
-                
-            
-                
-                limparFormulario();
-                
-            } catch (Exception e) {
-                JOptionPane.showMessageDialog(this,
-                    "Erro ao finalizar pedido: " + e.getMessage(),
-                    "Erro", JOptionPane.ERROR_MESSAGE);
-                e.printStackTrace();
-            }
+    private void finalizarPedido() {
+        if (itensPedido.isEmpty()) {
+            JOptionPane.showMessageDialog(this, "Adicione itens ao pedido antes de finalizar!", "Aviso", JOptionPane.WARNING_MESSAGE);
+            return;
         }
 
-        // Método auxiliar para validar estoque
-        private boolean validarEstoqueDisponivel() {
-            for (ItemPedido item : itensPedido) {
-                if (item.getQuantidade() > item.getProduto().getQuantidadeProduto()) {
-                    return false;
-                }
-            }
-            return true;
+        String nomeCliente = tfCliente.getText().trim();
+        if (nomeCliente.isEmpty()) {
+            JOptionPane.showMessageDialog(this, "Informe o nome do cliente!", "Aviso", JOptionPane.WARNING_MESSAGE);
+            tfCliente.requestFocus();
+            return;
         }
+
+        List<Cliente> clientes = clienteDAO.buscarPorNome(nomeCliente);
+        Cliente cliente = clientes.isEmpty() ? null : clientes.get(0);
+
+        if (cliente == null) {
+            cliente = new Cliente();
+            cliente.setNome(nomeCliente);
+            clienteDAO.salvar(cliente);
+        }
+
+        Pedido pedido = new Pedido();
+        pedido.setCliente(cliente);
+        pedido.setDataHoraPedido(Calendar.getInstance());
+        pedido.setItens(itensPedido);
+        pedidoDAO.cadastrarPedidoEItens(pedido);
+
+        String mensagem = "Pedido finalizado com sucesso!\n\n";
+        mensagem += "Cliente: " + cliente.getNome() + "\n";
+        mensagem += "Total: R$ " + tfTotal.getText() + "\n";
+        mensagem += "Itens: " + itensPedido.size();
+        tfNumero.setText(String.valueOf(pedido.getId()));
+        JOptionPane.showMessageDialog(this, mensagem, "Pedido Finalizado", JOptionPane.INFORMATION_MESSAGE);
+        limparFormulario();
+    }
 
     
     private void limparFormulario() {

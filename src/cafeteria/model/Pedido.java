@@ -8,13 +8,12 @@ public class Pedido {
     private Long id;
     private Calendar dataHoraPedido;
     private Cliente cliente;
+    private Pessoa pessoa; // Nova propriedade adicionada
     private List<ItemPedido> itens;
     private boolean cancelado;
     private boolean entregue;
-    
-    // Getters e setters
 
-    
+    // Construtor
     public Pedido() {
         this.cancelado = false;
         this.entregue = false;
@@ -45,6 +44,15 @@ public class Pedido {
         this.cliente = cliente;
     }
 
+    // Novos métodos get/set para Pessoa
+    public Pessoa getPessoa() {
+        return pessoa;
+    }
+
+    public void setPessoa(Pessoa pessoa) {
+        this.pessoa = pessoa;
+    }
+
     public List<ItemPedido> getItens() {
         return itens;
     }
@@ -53,7 +61,7 @@ public class Pedido {
         this.itens = itens;
     }
 
-    // Novos métodos para status do pedido
+    // Métodos para status do pedido
     public boolean isCancelado() {
         return cancelado;
     }
@@ -79,7 +87,7 @@ public class Pedido {
         BigDecimal total = BigDecimal.ZERO;
         for (ItemPedido item : itens) {
             total = total.add(item.getPrecoUnitario()
-                              .multiply(BigDecimal.valueOf(item.getQuantidade())));
+                .multiply(BigDecimal.valueOf(item.getQuantidade())));
         }
         return total;
     }
@@ -87,13 +95,6 @@ public class Pedido {
     // Método para verificar se o pedido está pendente
     public boolean isPendente() {
         return !cancelado && !entregue;
-    }
-
-    @Override
-    public String toString() {
-        return "Pedido [id=" + id + ", dataHoraPedido=" + dataHoraPedido.getTime() + 
-               ", cliente=" + (cliente != null ? cliente.getNome() : "Sem cliente") + 
-               ", total=" + getTotal() + ", status=" + getStatus() + "]";
     }
 
     // Método para obter o status como String
@@ -105,5 +106,15 @@ public class Pedido {
         } else {
             return "Pendente";
         }
+    }
+
+    @Override
+    public String toString() {
+        return "Pedido [id=" + id + 
+               ", dataHoraPedido=" + dataHoraPedido.getTime() + 
+               ", cliente=" + (cliente != null ? cliente.getNome() : "Sem cliente") + 
+               ", pessoa=" + (pessoa != null ? pessoa.getNome() : "Sem pessoa") +
+               ", total=" + getTotal() + 
+               ", status=" + getStatus() + "]";
     }
 }

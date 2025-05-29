@@ -29,10 +29,10 @@ public class PedidoDAO {
                 pedido.setDataHoraPedido(data);
                 
                 if (rs.getObject("cliente_id") != null) {
-                    Cliente cliente = new Cliente();
-                    cliente.setId(rs.getLong("cliente_id"));
-                    cliente.setNome(rs.getString("cliente_nome"));
-                    pedido.setCliente(cliente);
+                    Pessoa pessoa = new Pessoa();
+                    pessoa.setId(rs.getLong("cliente_id"));
+                    pessoa.setNome(rs.getString("cliente_nome"));
+                    pedido.setPessoa(pessoa);
                 }
                 
                 pedido.setCancelado(rs.getBoolean("cancelado"));
@@ -47,7 +47,7 @@ public class PedidoDAO {
         return pedidos;
     }
 
-    private List<ItemPedido> listarItensPedid1o(long pedidoId) {
+    private List<ItemPedido> listarItensPedido(long pedidoId) {
         String sql = "SELECT ip.id, ip.produto_id, ip.quantidade, ip.precoUnitario, " +
                     "pr.nome as produto_nome, pr.preco as produto_preco, " +
                     "pr.categoria, pr.quantidade as produto_estoque " +
@@ -94,8 +94,8 @@ public class PedidoDAO {
             try (PreparedStatement stmtPedido = con.prepareStatement(sqlPedido, Statement.RETURN_GENERATED_KEYS)) {
                 stmtPedido.setTimestamp(1, new Timestamp(pedido.getDataHoraPedido().getTimeInMillis()));
                 
-                if (pedido.getCliente() != null) {
-                    stmtPedido.setLong(2, pedido.getCliente().getId());
+                if (pedido.getPessoa() != null) {
+                    stmtPedido.setLong(2, pedido.getPessoa().getId());
                 } else {
                     stmtPedido.setNull(2, Types.BIGINT);
                 }
@@ -131,20 +131,6 @@ public class PedidoDAO {
             try { con.setAutoCommit(true); } catch (SQLException e) {}
         }
     }
-
-    // Método auxiliar para atualizar estoque
-    private void atualizarEstoquePedido(Pedido pedido) throws SQLException {
-        String sql = "UPDATE produto SET quantidade = quantidade - ? WHERE id = ?";
-        
-        try (PreparedStatement stmt = con.prepareStatement(sql)) {
-            for (ItemPedido item : pedido.getItens()) {
-                stmt.setInt(1, item.getQuantidade());
-                stmt.setLong(2, item.getProduto().getId());
-                stmt.addBatch();
-            }
-            stmt.executeBatch();
-        }
-    }
     
     public Pedido buscarPedidoPorId(long idPedido) {
         String sqlPedido = "SELECT p.codigo, p.dataHoraPedido, p.cliente_id, " +
@@ -175,9 +161,10 @@ public class PedidoDAO {
                         pedido.setEntregue(rsPedido.getBoolean("entregue"));
                         
                         if (rsPedido.getObject("cliente_id") != null) {
-                            Cliente cliente = new Cliente();
-                            cliente.setId(rsPedido.getLong("cliente_id"));
-                            pedido.setCliente(cliente);
+                            Pessoa pessoa = new Pessoa();
+                            pessoa.setId(rsPedido.getLong("cliente_id"));
+                            pessoa.setNome(rsPedido.getString("cliente_nome"));
+                            pedido.setPessoa(pessoa);
                         }
                     }
                 }
@@ -258,40 +245,6 @@ public class PedidoDAO {
         }
     }
 
-    // --- Métodos Auxiliares ---
-    private List<ItemPedido> listarItensPedido(long pedidoId) {
-        String sql = "SELECT ip.id as item_id, ip.quantidade, ip.precoUnitario, " +
-                    "p.id as produto_id, p.nome as produto_nome " +
-                    "FROM item_pedido ip " +
-                    "JOIN produto p ON ip.produto_id = p.id " +
-                    "WHERE ip.pedido_id = ?";
-        
-        List<ItemPedido> itens = new ArrayList<>();
-        
-        try (PreparedStatement stmt = con.prepareStatement(sql)) {
-            stmt.setLong(1, pedidoId);
-            
-            try (ResultSet rs = stmt.executeQuery()) {
-                while (rs.next()) {
-                    ItemPedido item = new ItemPedido();
-                    item.setId(rs.getLong("item_id"));
-                    item.setQuantidade(rs.getInt("quantidade"));
-                    item.setPrecoUnitario(rs.getBigDecimal("precoUnitario"));
-                    
-                    Produto produto = new Produto();
-                    produto.setId(rs.getLong("produto_id"));
-                    produto.setNome(rs.getString("produto_nome"));
-                    item.setProduto(produto);
-                    
-                    itens.add(item);
-                }
-            }
-        } catch (SQLException e) {
-            System.err.println("Erro ao listar itens do pedido: " + e.getMessage());
-        }
-        return itens;
-    }
-    
     public BigDecimal calcularTotalFaturado() {
         String sql = "SELECT SUM(ip.quantidade * ip.precoUnitario) as total " +
                      "FROM item_pedido ip JOIN pedido p ON ip.pedido_id = p.codigo " +
