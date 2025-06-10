@@ -5,6 +5,7 @@ import java.util.Calendar;
 import java.util.List;
 
 public class Pedido {
+
     private Long id;
     private Calendar dataHoraPedido;
     private Cliente cliente;
@@ -12,6 +13,7 @@ public class Pedido {
     private List<ItemPedido> itens;
     private boolean cancelado;
     private boolean entregue;
+
 
     // Construtor
     public Pedido() {
@@ -43,6 +45,7 @@ public class Pedido {
     public void setCliente(Cliente cliente) {
         this.cliente = cliente;
     }
+
 
     // Novos métodos get/set para Pessoa
     public Pessoa getPessoa() {
@@ -118,3 +121,8 @@ public class Pedido {
                ", status=" + getStatus() + "]";
     }
 }
+
+	
+	
+
+

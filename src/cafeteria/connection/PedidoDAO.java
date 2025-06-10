@@ -1,9 +1,25 @@
 package cafeteria.connection;
 
+
 import java.math.BigDecimal;
 import java.sql.*;
 import java.util.*;
 import cafeteria.model.*;
+
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+//certo
+import java.sql.Timestamp;
+import java.util.ArrayList;
+import java.util.List;
+
+import javax.swing.JOptionPane;
+
+import cafeteria.model.ItemPedido;
+import cafeteria.model.Pedido;
+
 
 public class PedidoDAO {
     private Connection con = ConexaoDAO.getConnection();
@@ -44,6 +60,7 @@ public class PedidoDAO {
         } catch (SQLException e) {
             System.err.println("Erro ao listar pedidos: " + e.getMessage());
         }
+
         return pedidos;
     }
 
@@ -261,5 +278,19 @@ public class PedidoDAO {
             System.err.println("Erro ao calcular total faturado: " + e.getMessage());
         }
         return BigDecimal.ZERO;
-    }
+    
+
+
+		
+	
+	
+	    
+	}
+	
+  
+   
 }
+	        
+ 
+	
+

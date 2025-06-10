@@ -132,6 +132,8 @@ public class CafeteriaInterface extends JPanel {
         add(lbTotal);
         add(tfTotal);
         add(btFinalizarPedido);
+        
+        
     }
     
     private void configurarTabela() {
