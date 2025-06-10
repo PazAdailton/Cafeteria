@@ -3,15 +3,15 @@ package cafeteria.model;
 import java.math.BigDecimal;
 
 public class ItemPedido {
-    private Long id;               // ID do item_pedido (pode ser null para novos itens)
-    private Pedido pedido;         // Referência ao pedido (opcional, dependendo da necessidade)
-    private Produto produto;       // Produto associado
-    private Integer quantidade;    // Usando Integer para permitir null
-    private BigDecimal precoUnitario; // Preço no momento da venda
-    private Boolean cancelado;     // Status do item (opcional)
+    private Long id;              
+    private Pedido pedido;     
+    private Produto produto;      
+    private Integer quantidade;    
+    private BigDecimal precoUnitario;
+    private Boolean cancelado;     
 
     public ItemPedido() {
-        this.quantidade = 1;       // Valor padrão
+        this.quantidade = 1;   
         this.cancelado = false;
     }
 

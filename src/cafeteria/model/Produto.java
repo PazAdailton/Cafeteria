@@ -8,7 +8,7 @@ public class Produto {
     private BigDecimal preco;
     private Integer quantidade;
     private Categoria categoria;
-	private Integer quantidadeProduto;
+
 
     // Construtor
     public Produto() {}
@@ -38,17 +38,17 @@ public class Produto {
         this.preco = preco;
     }
 
-    // Método setQuantidadeProduto (novo)
-    public void setQuantidadeProduto(Integer quantidadeProduto) {
-        if (quantidadeProduto != null && quantidadeProduto >= 0) {
-            this.quantidadeProduto = quantidadeProduto;
+    // Método setquantidade (novo)
+    public void setQuantidade(Integer quantidade) {
+        if (quantidade != null && quantidade >= 0) {
+            this.quantidade = quantidade;
         } else {
             throw new IllegalArgumentException("Quantidade não pode ser negativa");
         }
     }
 
-    public Integer getQuantidadeProduto() {
-        return quantidadeProduto;
+    public Integer geQuantidade() {
+        return quantidade;
     }
 
     // Método setCategoria (novo)
@@ -66,6 +66,6 @@ public class Produto {
     @Override
     public String toString() {
         return "Produto [id=" + id + ", nome=" + nome + ", preco=" + preco + 
-               ", quantidade=" + quantidadeProduto + ", categoria=" + categoria + "]";
+               ", quantidade=" + quantidade + ", categoria=" + categoria + "]";
     }
 }

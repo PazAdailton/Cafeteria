@@ -29,10 +29,10 @@ public class PedidoDAO {
                 pedido.setDataHoraPedido(data);
                 
                 if (rs.getObject("cliente_id") != null) {
-                    Pessoa pessoa = new Pessoa();
-                    pessoa.setId(rs.getLong("cliente_id"));
-                    pessoa.setNome(rs.getString("cliente_nome"));
-                    pedido.setPessoa(pessoa);
+                    Cliente cliente = new Cliente();
+                    cliente.setId(rs.getLong("cliente_id"));
+                    cliente.setNome(rs.getString("cliente_nome"));
+                    pedido.setCliente(cliente);  // Use setCliente em vez de setPessoa
                 }
                 
                 pedido.setCancelado(rs.getBoolean("cancelado"));
@@ -71,7 +71,7 @@ public class PedidoDAO {
                     produto.setNome(rs.getString("produto_nome"));
                     produto.setPreco(rs.getBigDecimal("produto_preco"));
                     produto.setCategoria(Categoria.valueOf(rs.getString("categoria")));
-                    produto.setQuantidadeProduto(rs.getInt("produto_estoque"));
+                    produto.setQuantidade(rs.getInt("produto_estoque"));
                     
                     item.setProduto(produto);
                     itens.add(item);
@@ -94,8 +94,8 @@ public class PedidoDAO {
             try (PreparedStatement stmtPedido = con.prepareStatement(sqlPedido, Statement.RETURN_GENERATED_KEYS)) {
                 stmtPedido.setTimestamp(1, new Timestamp(pedido.getDataHoraPedido().getTimeInMillis()));
                 
-                if (pedido.getPessoa() != null) {
-                    stmtPedido.setLong(2, pedido.getPessoa().getId());
+                if (pedido.getCliente() != null) {
+                    stmtPedido.setLong(2, pedido.getCliente().getId());
                 } else {
                     stmtPedido.setNull(2, Types.BIGINT);
                 }
@@ -246,9 +246,9 @@ public class PedidoDAO {
     }
 
     public BigDecimal calcularTotalFaturado() {
-        String sql = "SELECT SUM(ip.quantidade * ip.precoUnitario) as total " +
-                     "FROM item_pedido ip JOIN pedido p ON ip.pedido_id = p.codigo " +
-                     "WHERE p.entregue = 1";
+    	 String sql = "SELECT COALESCE(SUM(ip.quantidade * ip.precoUnitario), 0) as total " +
+                 "FROM item_pedido ip " +
+                 "WHERE EXISTS (SELECT 1 FROM pedido p WHERE p.codigo = ip.pedido_id AND p.entregue = true)";
         
         try (PreparedStatement stmt = con.prepareStatement(sql);
              ResultSet rs = stmt.executeQuery()) {

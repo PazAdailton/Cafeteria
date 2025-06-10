@@ -25,7 +25,7 @@ public class ProdutoDAO {
                 produto.setId(rs.getLong("id"));
                 produto.setNome(rs.getString("nome"));
                 produto.setPreco(rs.getBigDecimal("preco"));
-                produto.setQuantidadeProduto(rs.getInt("quantidade"));
+                produto.setQuantidade(rs.getInt("quantidade"));
                 
                 try {
                     produto.setCategoria(Categoria.valueOf(rs.getString("categoria")));

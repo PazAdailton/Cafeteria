@@ -1,18 +1,36 @@
 package cafeteria.tela;
 
-import java.awt.*;
+import java.awt.Component;
+import java.awt.Dimension;
 import java.math.BigDecimal;
 import java.text.DecimalFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.List;
-import javax.swing.*;
-import javax.swing.table.*;
+
+import javax.swing.DefaultComboBoxModel;
+import javax.swing.DefaultListCellRenderer;
+import javax.swing.JButton;
+import javax.swing.JComboBox;
+import javax.swing.JLabel;
+import javax.swing.JList;
+import javax.swing.JOptionPane;
+import javax.swing.JPanel;
+import javax.swing.JScrollPane;
+import javax.swing.JTable;
+import javax.swing.JTextField;
+import javax.swing.ListSelectionModel;
+import javax.swing.SwingConstants;
+import javax.swing.table.DefaultTableCellRenderer;
+import javax.swing.table.DefaultTableModel;
 
 import cafeteria.connection.ClienteDAO;
 import cafeteria.connection.PedidoDAO;
 import cafeteria.connection.ProdutoDAO;
-import cafeteria.model.*;
+import cafeteria.model.Cliente;
+import cafeteria.model.ItemPedido;
+import cafeteria.model.Pedido;
+import cafeteria.model.Produto;
 
 public class CafeteriaInterface extends JPanel {
     private JButton btRemover, btAdicionar, btFinalizarPedido;
@@ -182,36 +200,36 @@ public class CafeteriaInterface extends JPanel {
                 return;
             }
 
-            int quantidade = Integer.parseInt(textoQuantidade);
+            int qtd = Integer.parseInt(textoQuantidade);
 
-            if (quantidade <= 0) {
+            if (qtd <= 0) {
                 JOptionPane.showMessageDialog(this, "Quantidade deve ser maior que zero!", "Erro", JOptionPane.WARNING_MESSAGE);
                 return;
             }
 
             Produto produto = (Produto) cbProdutos.getSelectedItem();
 
-            if (quantidade > produto.getQuantidadeProduto()) {
+            if (qtd > produto.geQuantidade()) {
                 JOptionPane.showMessageDialog(this, 
-                    "Quantidade indisponível em estoque!\nEstoque atual: " + produto.getQuantidadeProduto(), 
+                    "Quantidade indisponível em estoque!\nEstoque atual: " + produto.geQuantidade(), 
                     "Estoque Insuficiente", JOptionPane.WARNING_MESSAGE);
                 return;
             }
 
             BigDecimal precoUnitario = produto.getPreco();
-            BigDecimal totalItem = precoUnitario.multiply(new BigDecimal(quantidade));
+            BigDecimal totalItem = precoUnitario.multiply(new BigDecimal(qtd));
 
             DefaultTableModel model = (DefaultTableModel) table.getModel();
             model.addRow(new Object[]{
                 produto.getNome(),
-                quantidade,
+                qtd,
                 df.format(precoUnitario),
                 df.format(totalItem)
             });
 
             ItemPedido item = new ItemPedido();
             item.setProduto(produto);
-            item.setQuantidade(quantidade);
+            item.setQuantidade(qtd);
             item.setPrecoUnitario(precoUnitario);
             itensPedido.add(item);
 
