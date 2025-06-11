@@ -5,10 +5,7 @@ import javax.swing.*;
 import javax.swing.table.DefaultTableModel;
 import java.awt.*;
 import java.math.BigDecimal;
-import java.sql.Connection;
 import java.util.List;
-
-import cafeteria.connection.ConexaoDAO;
 import cafeteria.connection.ProdutoDAO;
 import cafeteria.model.Categoria;
 import cafeteria.model.Produto;
@@ -20,9 +17,6 @@ public class CafeteriaAdmInterface {
     private DefaultTableModel modeloTabela;
     private JButton btnAdicionar;
     private JButton btnEditar;
-//    private JButton btnExcluir;
-
-   
 
     public CafeteriaAdmInterface() {
         initialize();
@@ -72,7 +66,6 @@ public class CafeteriaAdmInterface {
     private void definirEventos() {
         btnAdicionar.addActionListener(e -> adicionarProduto());
         btnEditar.addActionListener(e -> editarProduto());
-//        btnExcluir.addActionListener(e -> excluirProduto());
     }
 
     private void adicionarProduto() {
@@ -123,28 +116,6 @@ public class CafeteriaAdmInterface {
             JOptionPane.showMessageDialog(frame, "Erro ao editar produto: " + ex.getMessage());
         }
     }
-
-//    private void excluirProduto() {
-//        int linha = tabelaProdutos.getSelectedRow();
-//        if (linha == -1) {
-//            JOptionPane.showMessageDialog(frame, "Selecione um produto para excluir.");
-//            return;
-//        }
-//
-//        Long id = Long.valueOf(modeloTabela.getValueAt(linha, 0).toString());
-//
-//        int opcao = JOptionPane.showConfirmDialog(frame, "Confirma exclusão do produto?");
-//        if (opcao == JOptionPane.YES_OPTION) {
-//            try {
-//                new ProdutoDAO().deletar(id);
-//                carregarProdutos();
-//            } catch (Exception ex) {
-//                // Mostra a mensagem da exceção (ex: "Produto está em uso e não pode ser excluído.")
-//                JOptionPane.showMessageDialog(frame, ex.getMessage(), "Erro", JOptionPane.ERROR_MESSAGE);
-//            }
-//        }
-//    }
-
 
     private void carregarProdutos() {
         ProdutoDAO produtoDAO = new ProdutoDAO();
