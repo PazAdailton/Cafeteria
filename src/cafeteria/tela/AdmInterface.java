@@ -9,13 +9,13 @@ import java.util.*;
 import cafeteria.connection.PedidoDAO;
 import cafeteria.model.*;
 
-public class admInterface extends JFrame {
+public class AdmInterface extends JFrame {
     private JTable tabelaPedidos;
     private JLabel lbTotalFaturado;
     private DecimalFormat df = new DecimalFormat("#,##0.00");
     private PedidoDAO pedidoDAO = new PedidoDAO();
     
-    public admInterface() {
+    public AdmInterface() {
         super("Painel Administrativo");
         configurarJanela();
         inicializarComponentes(); // Inicializa primeiro
@@ -118,6 +118,6 @@ public class admInterface extends JFrame {
     }
     
     public static void main(String[] args) {
-        SwingUtilities.invokeLater(() -> new admInterface());
+        SwingUtilities.invokeLater(() -> new AdmInterface());
     }
 }
